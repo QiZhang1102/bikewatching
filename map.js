@@ -1,30 +1,34 @@
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
 console.log('Mapbox GL JS Loaded:', mapboxgl);
 
-// Set your Mapbox access token here
 mapboxgl.accessToken = 'pk.eyJ1IjoicWl6aGFuZzExMDIiLCJhIjoiY21odm95bTg5MGRhaDJscHZha252dGdzdyJ9.893n-8_lYlGZPVuz4sN3AQ';
+function getCoords(station) {
+  const point = new mapboxgl.LngLat(+station.lon, +station.lat);
+  const { x, y } = map.project(point);
+  return { cx: x, cy: y };
+}
 
 
-// Initialize the map
 const map = new mapboxgl.Map({
-  container: 'map', // ID of the div where the map will render
-  style: 'mapbox://styles/mapbox/streets-v12', // Map style
-  center: [-71.09415, 42.36027], // [longitude, latitude]
-  zoom: 12, // Initial zoom level
-  minZoom: 5, // Minimum allowed zoom
-  maxZoom: 18, // Maximum allowed zoom
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: [-71.09415, 42.36027],
+  zoom: 12,
+  minZoom: 5,
+  maxZoom: 18,
 });
 
 
 map.on('load', async () => {
+  const svg = d3.select('#map').select('svg');
 
-  // Adding the Data Source with addSource
   map.addSource('boston_route', {
     type: 'geojson',
     data: 'https://bostonopendata-boston.opendata.arcgis.com/datasets/boston::existing-bike-network-2022.geojson',
 });
 
-  // Visualizing the data with addLayer
+
   map.addLayer({
     id: 'bike-lanes',
     type: 'line',
@@ -53,4 +57,47 @@ map.addLayer({
     'line-opacity': 0.6
   }
 });
+
+
+
+  const INPUT_BLUEBIKES_CSV_URL =
+    "https://dsc106.com/labs/lab07/data/bluebikes-stations.json";
+
+  let jsonData;
+
+  try {
+    const jsonurl = INPUT_BLUEBIKES_CSV_URL;
+
+    jsonData = await d3.json(jsonurl); 
+    console.log('Loaded JSON Data:', jsonData);
+  } catch (error) {
+    console.error('Error loading JSON:', error);
+  }
+
+  let stations = jsonData.data.stations;
+  console.log('Stations Array:', stations);
+
+  const circles = svg
+  .selectAll('circle')
+  .data(stations)
+  .enter()
+  .append('circle')
+  .attr('r', 5) // Radius of the circle
+  .attr('fill', 'steelblue') // Circle fill color
+  .attr('stroke', 'white') // Circle border color
+  .attr('stroke-width', 1) // Circle border thickness
+  .attr('opacity', 0.8); // Circle opacity
+
+  function updatePositions() {
+    circles
+      .attr('cx', d => getCoords(d).cx)
+      .attr('cy', d => getCoords(d).cy);
+  }
+
+  updatePositions();
+
+  map.on('move', updatePositions);
+  map.on('zoom', updatePositions);
+  map.on('resize', updatePositions);
+  map.on('moveend', updatePositions);
 });
