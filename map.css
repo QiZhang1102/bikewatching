@@ -17,3 +17,33 @@
 circle {
   pointer-events: auto;
 }
+
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 1em;
+  padding: 1rem;
+}
+
+header label {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 350px;
+}
+
+header time,
+header em {
+  display: block;
+}
+
+header em {
+  color: #666;
+  font-style: italic;
+}
+
+header label input[type="range"] {
+  width: 100%;
+}
