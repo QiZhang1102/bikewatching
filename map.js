@@ -4,6 +4,10 @@ console.log('Mapbox GL JS Loaded:', mapboxgl);
 
 mapboxgl.accessToken = 'pk.eyJ1IjoicWl6aGFuZzExMDIiLCJhIjoiY21odm95bTg5MGRhaDJscHZha252dGdzdyJ9.893n-8_lYlGZPVuz4sN3AQ';
 
+let stationFlow = d3.scaleQuantize()
+  .domain([0, 1])
+  .range([0, 0.5, 1]);
+
 function formatTime(minutes) {
   const date = new Date(0, 0, 0, 0, minutes);
   return date.toLocaleString('en-US', { timeStyle: 'short' });
@@ -85,15 +89,25 @@ const radiusScale = d3
     .enter()
     .append('circle')
     .attr('r', d => radiusScale(d.totalTraffic))
-    .attr('fill', 'steelblue')
     .attr('stroke', 'white')
     .attr('stroke-width', 1)
     .attr('opacity', 0.6)
+    .style('--departure-ratio', d => {
+  const ratio = 
+    d.totalTraffic === 0
+      ? 0.5
+      : d.departures / d.totalTraffic;
+
+  return stationFlow(ratio);
+})
+
+
     .each(function (d) {
       d3.select(this)
         .append('title')
         .text(`${d.totalTraffic} trips (${d.departures} departures, ${d.arrivals} arrivals)`);
     });
+
 
   function updatePositions() {
     circles
@@ -107,9 +121,9 @@ const radiusScale = d3
   map.on('moveend', updatePositions);
 
   let timeFilter = -1;
-const timeSlider = document.getElementById("timeSlider");
-const selectedTime = document.getElementById("selectedTime");
-const anyTimeLabel = document.getElementById("anyTime");
+  const timeSlider = document.getElementById("timeSlider");
+  const selectedTime = document.getElementById("selectedTime");
+  const anyTimeLabel = document.getElementById("anyTime");
 
   function updateScatterPlot(timeFilter) {
     const filteredTrips = filterTripsByTime(trips, timeFilter);
@@ -119,14 +133,22 @@ const anyTimeLabel = document.getElementById("anyTime");
       ? radiusScale.range([0, 25])
       : radiusScale.range([3, 50]);
 
-    circles
-      .data(filteredStations, d => d.short_name)
-      .attr('r', d => radiusScale(d.totalTraffic));
-  }
+        circles
+    .data(filteredStations, d => d.short_name)
+    .attr('r', d => radiusScale(d.totalTraffic))
+    .style('--departure-ratio', d => {
+  const ratio =
+    d.totalTraffic === 0
+      ? 0.5
+      : d.departures / d.totalTraffic;
+
+  return stationFlow(ratio);
+})
+}
 
 
   function updateTimeDisplay() {
-    timeFilter = Number(timeSlider.value);
+    timeFilter = Number(timeSlider.value); 
 
     if (timeFilter === -1) {
       selectedTime.textContent = "";
